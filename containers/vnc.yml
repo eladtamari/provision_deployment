@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vnc-app
+spec:
+  selector:
+    matchLabels:
+      app: vnc-app
+  template:
+    metadata:
+      labels:
+        app: vnc-app
+    spec:
+      containers:
+      - image: dorowu/ubuntu-desktop-lxde-vnc
+        name: vnc-app
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: screen
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+     
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vnc-app
+spec:
+  type: ClusterIP
+  ports:
+  - name: "vnc-app" 
+    protocol: TCP
+    port: 5900
+    targetPort: 5900
+  - name: query 
+    protocol: TCP
+    port: 80
+    targetPort: 6080
+
+  # selector:
+  #   app: vnc-app
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vnc-app
+  annotations:
+    dev.okteto.com/generate-host: vnc-app
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: vnc-app
+                port:
+                  number: 5900
+            path: /
+            pathType: ImplementationSpecific

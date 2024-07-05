@@ -90,6 +90,9 @@ sudo apt update
 sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin kubectl
 export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
+#get cluster credentials
+gcloud container clusters get-credentials saips-gke  --zone us-east5-a
+
 
 
 
