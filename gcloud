@@ -1,0 +1,99 @@
+
+#=====create vpc =========
+
+gcloud compute networks create vpc-saips \
+--project=saips-proj \
+--subnet-mode=custom \
+--mtu=1460 \
+--bgp-routing-mode=regional
+
+#====== create subnet ========
+
+gcloud compute networks subnets create subnet-saips \
+--project=saips-proj \
+--range=10.10.9.0/24 \
+--stack-type=IPV4_ONLY \
+--network=vpc-saips \
+--region=me-west1 \
+--enable-private-ip-google-access
+
+gcloud compute networks subnets create proxy-only \
+--project=saips-proj \
+--range=10.10.9.0/24 \
+--stack-type=IPV4_ONLY \
+--network=vpc \
+--region=me-west1
+#--enable-private-ip-google-access
+
+#======  create firewall-rules ===========
+gcloud compute firewall-rules create vpc-allow-ssh-saips \
+--project=saips-proj \
+--network=projects/saips-proj/global/networks/vpc-saips \
+--description=Allows\ IAP\ on\ port\ 22 \
+--direction=INGRESS \
+--priority=65534 \
+--source-ranges=35.235.240.0/20 \
+--action=ALLOW \
+--rules=tcp:22
+
+
+#======  create vm ===============
+
+#--machine-type=e2-micro \
+gcloud compute instances create private-instance-saips \
+--project=saips-proj \
+--zone=me-west1-a \
+--machine-type=e2-standard-2 \
+--network-interface=subnet=subnet-saips,no-address \
+--no-restart-on-failure \
+--maintenance-policy=TERMINATE \
+--provisioning-model=SPOT \
+--instance-termination-action=STOP \
+--create-disk=auto-delete=yes,boot=yes,device-name=private-instance-saips,image=projects/ubuntu-os-pro-cloud/global/images/ubuntu-pro-2204-jammy-v20240519,mode=rw,size=100,type=projects/artifactory-saips/zones/me-west1-a/diskTypes/pd-balanced \
+--no-shielded-secure-boot \
+--shielded-vtpm \
+--shielded-integrity-monitoring \
+--reservation-affinity=any \
+--tags=http-server
+
+
+
+==== connect with SSH ======
+
+gcloud compute ssh --zone "me-west1-a" "private-instance-saips" --tunnel-through-iap --project saips-proj
+
+
+====== destroy all =========
+
+gcloud compute instances delete private-instance-saips \
+--project=saips-proj \
+--zone=me-west1-a 
+
+gcloud compute firewall-rules delete vpc-allow-ssh \
+--project=artifactory-saips
+
+
+gcloud compute networks subnets delete me-west1 \
+--project=artifactory-saips \
+--region=me-west1
+
+
+gcloud compute networks delete vpc \
+--project=artifactory-saips
+
+
+
+========== Install plugin workaround on jump server ================
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+sudo apt update
+sudo apt-get install google-cloud-sdk-gke-gcloud-auth-plugin kubectl
+export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
+
+
+
+
+
+
+

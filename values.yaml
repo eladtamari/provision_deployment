@@ -1,0 +1,24 @@
+wordpressUsername: admin
+wordpressPassword: password123
+wordpressEmail: admin@example.com
+
+mariadb:
+  db:
+    name: my_database
+    user: my_user
+    password: my_password
+  replication:
+    enabled: false
+
+service:
+  type: LoadBalancer
+
+ingress:
+  enabled: true
+  hosts:
+    - name: wordpress.example.com
+      path: /
+
+persistence:
+  enabled: true
+  size: 10Gi

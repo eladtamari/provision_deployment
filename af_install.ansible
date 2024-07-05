@@ -1,0 +1,20 @@
+sudo apt update -y
+sudo apt install -y default-jdk
+#curl -LsS https://downloads.mariadb.com/MariaDB/mariadb_repo_setup | bash -s --
+sudo apt update
+sudo apt install mariadb-server mariadb-client -y
+
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+
+sudo touch /etc/apt/sources.list.d/artifactory.list
+sudo chown eladtamari1 /etc/apt/sources.list.d/artifactory.list
+
+echo "deb https://releases.jfrog.io/artifactory/artifactory-debs xenial main" | tee -a /etc/apt/sources.list.d/artifactory.list
+curl -fsSL  https://releases.jfrog.io/artifactory/api/gpg/key/public|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/artifactory.gpg
+
+sudo apt update -y
+sudo apt install -y jfrog-artifactory-oss
+
+sudo systemctl start artifactory.service 
+sudo systemctl enable artifactory.service
